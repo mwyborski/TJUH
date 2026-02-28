@@ -1,13 +1,14 @@
 /*
  * TJUH — Tiny Joystick USB Host
  *
- * USB Host library for game controllers on RP2040 using TinyUSB bare API.
+ * USB Host library for game controllers on RP2040 / RP2350 using TinyUSB bare API.
  *
  * Supported controllers:
- *   - Sony DualShock 4 (CUH-ZCT2x)  VID=0x054c PID=0x09cc / 0x05c4
- *   - Sony DualSense (PS5)           VID=0x054c PID=0x0ce6
+ *   - Sony DualShock 4 (v1/v2)         VID=0x054c PID=0x05c4 / 0x09cc
+ *   - Sony DualSense / Edge (PS5)      VID=0x054c PID=0x0ce6 / 0x0df2
+ *   - Nintendo Switch Pro Controller   VID=0x057e PID=0x2009
  *   - Xbox 360 Wired
- *   - Generic HID gamepads (8-byte and 3-byte reports)
+ *   - Generic HID gamepads (8-byte, 3-byte, and DInput-compatible reports)
  *
  * MIT License — see LICENSE
  */

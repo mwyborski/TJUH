@@ -1,6 +1,6 @@
 # TJUH — Tiny Joystick USB Host
 
-USB Host library for game controllers on the Raspberry Pi Pico (RP2040). Uses the TinyUSB bare endpoint API to support a wide range of wired USB gamepads including controllers that don't follow the standard HID class protocol (e.g. Xbox 360).
+USB Host library for game controllers on the Raspberry Pi Pico (RP2040) and Pico 2 (RP2350). Uses the TinyUSB bare endpoint API to support a wide range of wired USB gamepads including controllers that don't follow the standard HID class protocol (e.g. Xbox 360).
 
 The library identifies controllers by their report format rather than by VID/PID, so most clones and third-party controllers work out of the box.
 
@@ -112,6 +112,27 @@ All controllers are mapped to `tjuh_gamepad_report_t`:
 | `l3, r3`   | 1 bit    | Stick clicks                                    |
 | `system`   | 1 bit    | PS / Xbox / Home button                         |
 | `extra`    | 1 bit    | Touchpad click (DualShock 4/DualSense)          |
+
+## Examples
+
+### PWM Output (`examples/pwm_output`)
+
+A validation example that maps gamepad inputs to physical Pico outputs, compatible with both Pico (RP2040) and Pico 2 (RP2350):
+
+- **4 analog axes → PWM outputs** on GP2, GP4, GP6, GP8. A multimeter on DC voltage mode reads a proportional voltage (0V–3.3V, ~1.65V at center).
+- **8 buttons → digital GPIO outputs** on GP10–GP17. Active high (3.3V when pressed).
+- **All inputs → UART serial** on GP0 (TX) / GP1 (RX) at 115200 baud.
+
+Build:
+
+```bash
+cd examples/pwm_output
+mkdir build && cd build
+cmake ..
+make -j
+```
+
+Flash `tjuh_pwm_example.uf2` to the Pico. Connect a USB gamepad via OTG adapter and monitor UART output with a serial terminal, or probe GPIO pins with a multimeter.
 
 ## Remarks
 
