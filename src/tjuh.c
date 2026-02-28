@@ -13,7 +13,15 @@
 #include "bsp/board.h"
 #include "tusb.h"
 #include "host/usbh.h"
+/*
+ * usbh_classdriver.h was renamed to usbh_pvt.h in TinyUSB 0.16.0 (Pico SDK 2.x).
+ * TUSB_VERSION_MAJOR/MINOR are defined in tusb_option.h, included via tusb.h.
+ */
+#if (TUSB_VERSION_MAJOR > 0) || (TUSB_VERSION_MAJOR == 0 && TUSB_VERSION_MINOR >= 16)
+#include "host/usbh_pvt.h"
+#else
 #include "host/usbh_classdriver.h"
+#endif
 
 /* ---------------------------------------------------------------------- */
 /*  Constants                                                             */
@@ -377,9 +385,10 @@ static bool open_hid_interface(uint8_t daddr, tusb_desc_interface_t const *desc_
 {
     bool ep_in_found = false;
 
+    /* HID descriptor is always 9 bytes (USB HID 1.11 §6.2.1).
+     * The type tusb_hid_descriptor_hid_t was removed in TinyUSB 0.16+. */
     uint16_t const expected_len =
-        (uint16_t)(sizeof(tusb_desc_interface_t) +
-                   sizeof(tusb_hid_descriptor_hid_t) +
+        (uint16_t)(sizeof(tusb_desc_interface_t) + 9 +
                    desc_itf->bNumEndpoints * sizeof(tusb_desc_endpoint_t));
 
     /* Detect Xbox One controllers by their characteristic descriptor mismatch.
