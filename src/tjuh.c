@@ -13,13 +13,7 @@
 #include "bsp/board.h"
 #include "tusb.h"
 #include "host/usbh.h"
-
-/* usbh_classdriver.h was renamed to usbh_pvt.h in TinyUSB 0.16+ (Pico SDK 2.x) */
-#if __has_include("host/usbh_pvt.h")
-#include "host/usbh_pvt.h"
-#else
 #include "host/usbh_classdriver.h"
-#endif
 
 /* ---------------------------------------------------------------------- */
 /*  Constants                                                             */
@@ -52,6 +46,16 @@ static const tjuh_gamepad_report_t s_zero_report = {0};
 
 /* Xbox One initialization sequence */
 static const uint8_t s_xboxone_start_input[] = {0x05, 0x20, 0x03, 0x01, 0x00};
+
+/* Switch Pro initialization: handshake + force USB-only mode */
+static const uint8_t s_switch_handshake[] = {0x80, 0x02};
+static const uint8_t s_switch_force_usb[] = {0x80, 0x04};
+
+/* Known VID/PID for hint detection */
+#define TJUH_VID_NINTENDO     0x057E
+#define TJUH_PID_SWITCH_PRO   0x2009
+#define TJUH_PID_JOYCON_L     0x2006
+#define TJUH_PID_JOYCON_R     0x2007
 
 /* ---------------------------------------------------------------------- */
 /*  Buffer pool                                                           */
@@ -280,6 +284,16 @@ static void on_device_descriptor(tuh_xfer_t *xfer)
     printf("\r\n");
 
     if (tjuh_parse_init_device(daddr, desc->idVendor, desc->idProduct)) {
+        /* Detect controllers that need special handling during enumeration */
+        if (desc->idVendor == TJUH_VID_NINTENDO &&
+            (desc->idProduct == TJUH_PID_SWITCH_PRO ||
+             desc->idProduct == TJUH_PID_JOYCON_L ||
+             desc->idProduct == TJUH_PID_JOYCON_R))
+        {
+            printf("[TJUH] Nintendo Switch controller detected\r\n");
+            s_devices[daddr].hint = TJUH_HINT_SWITCH_PRO;
+        }
+
         if (s_config.on_connect)
             s_config.on_connect(daddr, desc->idVendor, desc->idProduct);
 
@@ -363,13 +377,15 @@ static bool open_hid_interface(uint8_t daddr, tusb_desc_interface_t const *desc_
 {
     bool ep_in_found = false;
 
-    /* HID descriptor is 9 bytes (type was tusb_hid_descriptor_hid_t in older TinyUSB) */
     uint16_t const expected_len =
-        (uint16_t)(sizeof(tusb_desc_interface_t) + 9 +
+        (uint16_t)(sizeof(tusb_desc_interface_t) +
+                   sizeof(tusb_hid_descriptor_hid_t) +
                    desc_itf->bNumEndpoints * sizeof(tusb_desc_endpoint_t));
 
-    /* Detect Xbox One controllers by their characteristic descriptor mismatch */
-    if (max_len == 23 && expected_len == 32 && max_len < expected_len) {
+    /* Detect Xbox One controllers by their characteristic descriptor mismatch.
+     * Only set if no hint was assigned during VID/PID detection. */
+    if (s_devices[daddr].hint == TJUH_HINT_NONE &&
+        max_len == 23 && expected_len == 32 && max_len < expected_len) {
         printf("[TJUH] Xbox One controller detected (descriptor mismatch)\r\n");
         s_devices[daddr].hint = TJUH_HINT_XBOX_ONE;
     }
@@ -429,6 +445,26 @@ static bool open_hid_interface(uint8_t daddr, tusb_desc_interface_t const *desc_
 
                     send_xinput_report(daddr, desc_ep->bEndpointAddress,
                                        s_xboxone_start_input, sizeof(s_xboxone_start_input));
+                }
+            }
+
+            /* Switch Pro: handshake + force USB-only mode (prevents BT timeout) */
+            if (s_devices[daddr].hint == TJUH_HINT_SWITCH_PRO) {
+                if (!tuh_edpt_open(daddr, desc_ep)) {
+                    printf("[TJUH] Failed to open OUT endpoint 0x%02x\r\n",
+                           desc_ep->bEndpointAddress);
+                } else {
+                    while (usbh_edpt_busy(daddr, desc_ep->bEndpointAddress))
+                        tuh_task();
+                    send_xinput_report(daddr, desc_ep->bEndpointAddress,
+                                       s_switch_handshake, sizeof(s_switch_handshake));
+
+                    while (usbh_edpt_busy(daddr, desc_ep->bEndpointAddress))
+                        tuh_task();
+                    send_xinput_report(daddr, desc_ep->bEndpointAddress,
+                                       s_switch_force_usb, sizeof(s_switch_force_usb));
+
+                    printf("[TJUH] Switch Pro USB mode activated\r\n");
                 }
             }
         }

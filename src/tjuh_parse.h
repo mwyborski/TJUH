@@ -13,8 +13,9 @@ extern "C" {
 #endif
 
 typedef enum {
-    TJUH_HINT_NONE     = 0,
-    TJUH_HINT_XBOX_ONE = 1,
+    TJUH_HINT_NONE       = 0,
+    TJUH_HINT_XBOX_ONE   = 1,
+    TJUH_HINT_SWITCH_PRO = 2,
 } tjuh_hint_t;
 
 /* Device registry */

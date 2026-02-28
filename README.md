@@ -8,18 +8,25 @@ Based on the [TinyUSB host examples](https://github.com/hathach/tinyusb/tree/mas
 
 ## Supported Controllers
 
-| Controller              | Status |
-| ----------------------- | ------ |
-| PS5 DualSense           | ✓      |
-| PS4 DualShock 4         | ✓      |
-| Xbox 360 Wired          | ✓      |
-| 8BitDo SN30 Pro         | ✓      |
-| Competition Pro USB     | ✓      |
-| Generic USB 1.1 Gamepad | ✓      |
-| Xbox One                | ✗      |
-| PS3 Controller          | ✗      |
+| Controller               | Status |
+| ------------------------ | ------ |
+| PS5 DualSense            | ✓      |
+| PS5 DualSense Edge       | ✓      |
+| PS4 DualShock 4 (v1/v2)  | ✓      |
+| Xbox 360 Wired           | ✓      |
+| Switch Pro Controller    | ✓      |
+| 8BitDo SN30 Pro          | ✓      |
+| Competition Pro USB      | ✓      |
+| Generic USB 1.1 Gamepad  | ✓      |
+| Generic DInput Gamepads  | ✓*     |
+| Xbox One                 | ✗      |
+| PS3 Controller           | ✗      |
+
+\* Generic DInput gamepads with DS4-compatible report layout are auto-detected via heuristics.
 
 Xbox One support is detected but not yet functional. For Xbox One controllers, see [tusb_xinput](https://github.com/Ryzee119/tusb_xinput).
+
+PS3 DualShock 3 requires a USB control transfer to activate report streaming, which is not yet implemented.
 
 ## Features
 
